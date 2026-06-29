@@ -51,7 +51,14 @@ class DesktopPet(QMainWindow):
         self.label.setScaledContents(True)
         
         # Load assets
-        self.assets_dir = "assets"
+        # Default skin directory order: assets_cat, assets_hamster, or fallback to assets
+        if os.path.exists("assets_cat"):
+            self.assets_dir = "assets_cat"
+        elif os.path.exists("assets_hamster"):
+            self.assets_dir = "assets_hamster"
+        else:
+            self.assets_dir = "assets"
+            
         self.load_assets()
         
         # Behavior states
@@ -113,7 +120,7 @@ class DesktopPet(QMainWindow):
         # System Tray Menu
         self.tray_menu = QMenu()
         
-        feed_action = QAction("喂食 (Feed Seed)", self)
+        feed_action = QAction("喂食 (Feed)", self)
         feed_action.triggered.connect(self.feed_pet)
         self.tray_menu.addAction(feed_action)
         
@@ -124,6 +131,19 @@ class DesktopPet(QMainWindow):
         wake_action = QAction("唤醒 (Wake Up)", self)
         wake_action.triggered.connect(lambda: self.set_state(STATE_IDLE))
         self.tray_menu.addAction(wake_action)
+        
+        self.tray_menu.addSeparator()
+        
+        # Skin switcher submenu in Tray
+        self.skin_menu = self.tray_menu.addMenu("切换皮肤 (Skins)")
+        
+        hamster_action = QAction("仓鼠 (Hamster)", self)
+        hamster_action.triggered.connect(lambda: self.change_skin("assets_hamster"))
+        self.skin_menu.addAction(hamster_action)
+        
+        cat_action = QAction("猫咪 (Cat)", self)
+        cat_action.triggered.connect(lambda: self.change_skin("assets_cat"))
+        self.skin_menu.addAction(cat_action)
         
         self.tray_menu.addSeparator()
         
@@ -140,6 +160,17 @@ class DesktopPet(QMainWindow):
         self.tray_icon.setContextMenu(self.tray_menu)
         self.tray_icon.show()
         
+    def change_skin(self, skin_name):
+        """Dynamically switches pet skins between hamster and cat"""
+        if os.path.exists(skin_name):
+            self.assets_dir = skin_name
+            self.load_assets()
+            # Update tray icon
+            icon_pixmap = QPixmap(os.path.join(self.assets_dir, "idle_1.png")).scaled(18, 18, Qt.AspectRatioMode.KeepAspectRatio)
+            self.tray_icon.setIcon(QIcon(icon_pixmap))
+            self.update_animation_frame()
+            print(f"🐾 皮肤切换成功！当前加载目录：{skin_name}")
+            
     def set_state(self, new_state):
         if self.state == new_state:
             return
@@ -193,7 +224,7 @@ class DesktopPet(QMainWindow):
         # Right-click menu directly on pet (only works if click-through is OFF)
         menu = QMenu(self)
         
-        feed_action = QAction("喂食 (Feed Seed)", self)
+        feed_action = QAction("喂食 (Feed)", self)
         feed_action.triggered.connect(self.feed_pet)
         menu.addAction(feed_action)
         
@@ -204,6 +235,19 @@ class DesktopPet(QMainWindow):
         wake_action = QAction("唤醒 (Wake Up)", self)
         wake_action.triggered.connect(lambda: self.set_state(STATE_IDLE))
         menu.addAction(wake_action)
+        
+        menu.addSeparator()
+        
+        # Skin switcher submenu on right-click
+        skin_menu = menu.addMenu("切换皮肤 (Skins)")
+        
+        hamster_action = QAction("仓鼠 (Hamster)", self)
+        hamster_action.triggered.connect(lambda: self.change_skin("assets_hamster"))
+        skin_menu.addAction(hamster_action)
+        
+        cat_action = QAction("猫咪 (Cat)", self)
+        cat_action.triggered.connect(lambda: self.change_skin("assets_cat"))
+        skin_menu.addAction(cat_action)
         
         menu.addSeparator()
         
